@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뉴스 유튜브 자동화 대시보드 v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .api-config {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .api-config h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .news-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .news-item {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .news-item:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .news-item.selected {
+            border-color: #667eea;
+            background: #e8ebff;
+        }
+
+        .news-item h3 {
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .news-item .meta {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .status {
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .thumbnail-titles {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .thumbnail-title {
+            padding: 10px;
+            background: #f8f9ff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .thumbnail-title:hover {
+            border-color: #667eea;
+            background: #e8ebff;
+        }
+
+        .thumbnail-title.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .preview-section {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .preview-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .file-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .file-list li {
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-list .file-info {
+            flex: 1;
+        }
+
+        .file-list .file-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .file-list .file-size {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+        }
+
+        .close {
+            font-size: 2em;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .final-review {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .final-review h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .review-item {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .review-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .review-item .content {
+            color: #666;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 뉴스 유튜브 자동화 시스템 v2</h1>
+            <p class="subtitle">개선된 버전 - 실시간 미리보기 및 API 연동</p>
+        </header>
+
+        <!-- API 설정 섹션 -->
+        <div class="api-config">
+            <h2>⚙️ API 설정</h2>
+            <div class="api-grid">
+                <div class="input-group">
+                    <label>AI 서비스</label>
+                    <select id="aiService">
+                        <option value="gemini">Google Gemini (추천)</option>
+                        <option value="openai">OpenAI GPT-4</option>
+                        <option value="anthropic">Anthropic Claude</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>API 키 (선택사항 - Mock 모드 가능)</label>
+                    <input type="password" id="apiKey" placeholder="API 키를 입력하세요">
+                </div>
+                <div>
+                    <button class="btn btn-secondary" onclick="testAPI()">🧪 API 연결 테스트</button>
+                </div>
+            </div>
+            <div id="apiTestResult" class="status" style="display:none; margin-top: 15px;"></div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- 1. 뉴스 수집 카드 -->
+            <div class="card">
+                <h2>📰 1. 뉴스 수집</h2>
+                <div class="input-group">
+                    <label>키워드 (쉼표로 구분)</label>
+                    <input type="text" id="keywords" value="삼성,쿠팡,부동산,손흥민,AI" placeholder="삼성, 현대, 경제...">
+                </div>
+                <div class="input-group">
+                    <label>수집 개수</label>
+                    <input type="number" id="newsCount" value="10" min="5" max="50">
+                </div>
+                <button class="btn" onclick="collectNews()">🔍 뉴스 수집 시작</button>
+                <button class="btn btn-secondary" onclick="refreshNews()">🔄 새로고침</button>
+                <div id="newsStatus" class="status" style="display:none;"></div>
+                <div id="newsList" class="news-list"></div>
+            </div>
+
+            <!-- 2. AI 대본 생성 카드 -->
+            <div class="card">
+                <h2>✍️ 2. AI 대본 생성</h2>
+                <button class="btn" onclick="generateScript()" id="generateScriptBtn" disabled>📝 대본 생성</button>
+                <div id="scriptStatus" class="status" style="display:none;"></div>
+                <div id="scriptPreview" class="preview-section" style="display:none;">
+                    <h3>📄 생성된 대본 미리보기</h3>
+                    <div id="scriptContent" style="max-height: 300px; overflow-y: auto; background: white; padding: 15px; border-radius: 5px;"></div>
+                    <button class="btn btn-secondary" style="margin-top: 10px;" onclick="viewFullScript()">📖 전체 대본 보기</button>
+                </div>
+            </div>
+
+            <!-- 3. 썸네일 제목 생성 카드 -->
+            <div class="card">
+                <h2>🎨 3. 썸네일 제목</h2>
+                <button class="btn" onclick="generateThumbnails()" id="generateThumbnailBtn" disabled>🎯 썸네일 제목 10개 생성</button>
+                <div id="thumbnailStatus" class="status" style="display:none;"></div>
+                <div id="thumbnailTitles" class="thumbnail-titles"></div>
+            </div>
+
+            <!-- 4. TTS 음성 생성 카드 -->
+            <div class="card">
+                <h2>🎤 4. TTS 음성 생성</h2>
+                <div class="input-group">
+                    <label>TTS 서비스</label>
+                    <select id="ttsService">
+                        <option value="mock">Mock (테스트)</option>
+                        <option value="elevenlabs">ElevenLabs</option>
+                        <option value="google">Google TTS</option>
+                        <option value="azure">Azure TTS</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>음성 스타일</label>
+                    <select id="voiceStyle">
+                        <option value="professional">전문적인</option>
+                        <option value="friendly">친근한</option>
+                        <option value="energetic">활기찬</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="generateTTS()" id="generateTTSBtn" disabled>🔊 음성 생성</button>
+                <div id="ttsStatus" class="status" style="display:none;"></div>
+                <div id="ttsPreview" class="preview-section" style="display:none;">
+                    <h3>🎵 생성된 음성 파일</h3>
+                    <ul class="file-list" id="ttsFileList"></ul>
+                </div>
+            </div>
+
+            <!-- 5. 영상 편집 카드 -->
+            <div class="card">
+                <h2>🎬 5. 영상 편집</h2>
+                <div class="input-group">
+                    <label>편집 소프트웨어</label>
+                    <select id="editSoftware">
+                        <option value="mock">Mock (테스트)</option>
+                        <option value="vrew">Vrew (자동 자막)</option>
+                        <option value="premiere">Adobe Premiere</option>
+                        <option value="davinci">DaVinci Resolve</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="editVideo()" id="editVideoBtn" disabled>✂️ 영상 편집 시작</button>
+                <div id="editStatus" class="status" style="display:none;"></div>
+                <div id="videoPreview" class="preview-section" style="display:none;">
+                    <h3>🎥 편집된 영상 파일</h3>
+                    <ul class="file-list" id="videoFileList"></ul>
+                </div>
+            </div>
+
+            <!-- 6. 유튜브 업로드 카드 -->
+            <div class="card">
+                <h2>📤 6. 유튜브 업로드</h2>
+                <div class="input-group">
+                    <label>채널 선택</label>
+                    <select id="youtubeChannel">
+                        <option value="channel1">시니어 뉴스 채널</option>
+                        <option value="channel2">경제 뉴스 채널</option>
+                        <option value="channel3">테스트 채널</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>업로드 시간</label>
+                    <input type="datetime-local" id="uploadTime">
+                </div>
+                <button class="btn btn-secondary" onclick="showFinalReview()" id="reviewBtn" disabled>👀 최종 확인</button>
+                <button class="btn" onclick="uploadVideo()" id="uploadBtn" disabled>🚀 유튜브 업로드</button>
+                <div id="uploadStatus" class="status" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 대본 전체 보기 모달 -->
+    <div id="scriptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📖 전체 대본</h2>
+                <span class="close" onclick="closeScriptModal()">&times;</span>
+            </div>
+            <div id="fullScriptContent" style="line-height: 1.8; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <!-- 최종 확인 모달 -->
+    <div id="reviewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>👀 최종 확인</h2>
+                <span class="close" onclick="closeReviewModal()">&times;</span>
+            </div>
+            <div id="reviewContent"></div>
+            <button class="btn" onclick="confirmUpload()" style="margin-top: 20px;">✅ 확인 완료 - 업로드 준비</button>
+        </div>
+    </div>
+
+    <script>
+        let collectedNews = [];
+        let selectedNews = null;
+        let generatedScript = null;
+        let selectedThumbnail = null;
+        let generatedAudio = null;
+        let editedVideo = null;
+        let thumbnailTitles = [];
+
+        // API 연결 테스트
+        async function testAPI() {
+            const apiKey = document.getElementById('apiKey').value;
+            const service = document.getElementById('aiService').value;
+            const resultDiv = document.getElementById('apiTestResult');
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'status loading';
+            resultDiv.textContent = 'API 연결 테스트 중...';
+
+            if (!apiKey) {
+                resultDiv.className = 'status error';
+                resultDiv.textContent = '❌ API 키를 입력해주세요.\n\nMock 모드를 사용하려면 API 키 없이 진행하세요.';
+                return;
+            }
+
+            // Gemini API 테스트
+            if (service === 'gemini') {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{ text: "안녕하세요. 간단히 인사말로 응답해주세요." }]
+                            }]
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const text = data.candidates[0].content.parts[0].text;
+
+                        resultDiv.className = 'status success';
+                        resultDiv.textContent = `✅ Gemini API 연결 성공!\n\n테스트 응답: ${text}\n\n이 API 키를 사용할 수 있습니다.`;
+                    } else {
+                        const errorData = await response.json();
+                        resultDiv.className = 'status error';
+                        resultDiv.textContent = `❌ API 연결 실패\n\n상태: ${response.status}\n오류: ${JSON.stringify(errorData, null, 2)}\n\n해결방법:\n1. https://makersuite.google.com/app/apikey 에서 키 확인\n2. Gemini API가 활성화되어 있는지 확인`;
+                    }
+                } catch (error) {
+                    resultDiv.className = 'status error';
+                    resultDiv.textContent = `❌ 연결 오류: ${error.message}`;
+                }
+            }
+        }
+
+        // 1. 뉴스 수집
+        async function collectNews() {
+            const keywords = document.getElementById('keywords').value;
+            const count = document.getElementById('newsCount').value;
+            const statusDiv = document.getElementById('newsStatus');
+            const newsListDiv = document.getElementById('newsList');
+
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '뉴스 수집 중...';
+
+            // 실제 뉴스 수집 시뮬레이션
+            setTimeout(() => {
+                const keywordList = keywords.split(',').map(k => k.trim());
+                collectedNews = [];
+
+                // 다양한 뉴스 생성
+                const newsTemplates = [
+                    { title: '삼성전자, 반도체 분야 50조 투자 발표', keyword: '삼성', score: 2.5 },
+                    { title: '쿠팡 새벽배송, 전국 95% 지역으로 확대', keyword: '쿠팡', score: 2.3 },
+                    { title: '서울 아파트 평균 매매가 12억 돌파', keyword: '부동산', score: 2.1 },
+                    { title: '손흥민, EPL 통산 100호골 달성', keyword: '손흥민', score: 1.9 },
+                    { title: 'AI 반도체 시장, 올해 2배 성장 전망', keyword: 'AI', score: 1.8 },
+                    { title: '현대차, 전기차 신모델 3종 출시', keyword: '현대', score: 1.7 },
+                    { title: 'LG에너지솔루션, 북미 공장 증설', keyword: 'LG', score: 1.6 },
+                    { title: '네이버, AI 검색 서비스 대폭 개선', keyword: '네이버', score: 1.5 }
+                ];
+
+                keywordList.forEach((keyword, idx) => {
+                    const template = newsTemplates[idx % newsTemplates.length];
+                    collectedNews.push({
+                        id: Date.now() + idx,
+                        title: template.title.replace(/삼성|쿠팡|부동산|손흥민|AI/, keyword),
+                        description: `${keyword}에 대한 최신 뉴스입니다. 자세한 내용은 기사에서 확인하세요.`,
+                        keyword: keyword,
+                        relevance_score: template.score,
+                        pub_date: new Date().toISOString(),
+                        collected_at: new Date().toLocaleString()
+                    });
+                });
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ ${collectedNews.length}개 뉴스 수집 완료!\n수집 시간: ${new Date().toLocaleString()}`;
+
+                renderNewsList();
+            }, 2000);
+        }
+
+        // 뉴스 새로고침
+        function refreshNews() {
+            collectNews();
+        }
+
+        function renderNewsList() {
+            const newsListDiv = document.getElementById('newsList');
+            newsListDiv.innerHTML = '<h3 style="margin: 15px 0;">수집된 뉴스 (클릭하여 선택)</h3>';
+
+            collectedNews.forEach(news => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-item';
+                newsItem.onclick = () => selectNews(news);
+                newsItem.innerHTML = `
+                    <h3>${news.title}</h3>
+                    <div class="meta">
+                        키워드: ${news.keyword} | 관련성: ${news.relevance_score.toFixed(1)} | 수집: ${news.collected_at}
+                    </div>
+                `;
+                newsListDiv.appendChild(newsItem);
+            });
+        }
+
+        function selectNews(news) {
+            selectedNews = news;
+            document.querySelectorAll('.news-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            document.getElementById('generateScriptBtn').disabled = false;
+
+            // 선택 알림
+            const statusDiv = document.getElementById('newsStatus');
+            statusDiv.className = 'status success';
+            statusDiv.textContent = `✅ 선택됨: ${news.title}`;
+        }
+
+        // 2. AI 대본 생성
+        async function generateScript() {
+            if (!selectedNews) {
+                alert('먼저 뉴스를 선택해주세요!');
+                return;
+            }
+
+            const apiKey = document.getElementById('apiKey').value;
+            const service = document.getElementById('aiService').value;
+            const statusDiv = document.getElementById('scriptStatus');
+            const previewDiv = document.getElementById('scriptPreview');
+            const contentDiv = document.getElementById('scriptContent');
+
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = 'AI 대본 생성 중... (약 30초 소요)';
+            previewDiv.style.display = 'none';
+
+            // 실제 API 호출
+            if (apiKey && service === 'gemini') {
+                try {
+                    const prompt = `당신은 시니어층(40~60대)을 대상으로 하는 유튜브 뉴스 채널의 전문 작가입니다.
+
+아래 뉴스 기사를 바탕으로 8~10분 분량의 유튜브 영상 대본을 작성해주세요.
+
+[뉴스 기사]
+제목: ${selectedNews.title}
+내용: ${selectedNews.description}
+
+[대본 작성 요구사항]
+1. **도입부 (30초)**: 강력한 후킹 멘트로 시작 (예: "여러분, 이거 아십니까?", "충격적인 소식입니다")
+2. **본문 (7분)**:
+   - 기사 내용을 쉽고 자세하게 설명
+   - 전문 용어는 풀어서 설명
+   - 중간중간 시청자 몰입 유도 멘트 삽입
+3. **마무리 (30초)**:
+   - 핵심 요약
+   - 구독, 좋아요, 알림 설정 요청
+   - 다음 영상 예고
+
+[톤 및 스타일]
+- 전달형, 존중하는 어조
+- "여러분", "~입니다" 등 정중한 표현
+- 감정적 어필보다는 사실 중심
+
+대본만 출력해주세요.`;
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        generatedScript = data.candidates[0].content.parts[0].text;
+
+                        statusDiv.className = 'status success';
+                        statusDiv.textContent = `✅ 대본 생성 완료!\n길이: ${generatedScript.length}자 (약 ${Math.floor(generatedScript.length / 150)} 분 분량)`;
+
+                        contentDiv.textContent = generatedScript.substring(0, 500) + '...';
+                        previewDiv.style.display = 'block';
+
+                        document.getElementById('generateThumbnailBtn').disabled = false;
+                    } else {
+                        throw new Error(`API 오류: ${response.status}`);
+                    }
+                } catch (error) {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = `❌ 대본 생성 실패: ${error.message}\n\nMock 모드로 전환합니다...`;
+
+                    // Mock 모드로 대체
+                    setTimeout(() => generateScriptMock(), 1000);
+                }
+            } else {
+                // Mock 모드
+                generateScriptMock();
+            }
+        }
+
+        function generateScriptMock() {
+            const statusDiv = document.getElementById('scriptStatus');
+            const previewDiv = document.getElementById('scriptPreview');
+            const contentDiv = document.getElementById('scriptContent');
+
+            setTimeout(() => {
+                generatedScript = `여러분, 안녕하세요. 오늘은 정말 중요한 소식을 가지고 왔습니다.
+
+[도입부]
+${selectedNews.title}에 대해 혹시 들어보셨나요? 최근 많은 분들이 관심을 가지고 계신 이 내용, 오늘 자세히 알아보도록 하겠습니다.
+
+[본문]
+먼저 사건의 전말을 말씀드리자면, ${selectedNews.description}
+
+이는 우리 생활에 어떤 영향을 미칠까요? 전문가들은 다양한 의견을 내놓고 있는데요...
+
+(본문 계속 - 실제로는 8-10분 분량)
+
+[마무리]
+오늘 영상이 도움이 되셨다면 구독과 좋아요, 알림 설정 부탁드립니다.
+다음 영상에서는 더 유익한 정보로 찾아뵙겠습니다. 감사합니다.`;
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ 대본 생성 완료! (Mock 모드)\n길이: ${generatedScript.length}자 (약 ${Math.floor(generatedScript.length / 150)} 분 분량)`;
+
+                contentDiv.textContent = generatedScript.substring(0, 500) + '...';
+                previewDiv.style.display = 'block';
+
+                document.getElementById('generateThumbnailBtn').disabled = false;
+            }, 3000);
+        }
+
+        function viewFullScript() {
+            document.getElementById('fullScriptContent').textContent = generatedScript;
+            document.getElementById('scriptModal').style.display = 'block';
+        }
+
+        function closeScriptModal() {
+            document.getElementById('scriptModal').style.display = 'none';
+        }
+
+        // 3. 썸네일 제목 생성
+        async function generateThumbnails() {
+            if (!selectedNews || !generatedScript) {
+                alert('먼저 대본을 생성해주세요!');
+                return;
+            }
+
+            const apiKey = document.getElementById('apiKey').value;
+            const service = document.getElementById('aiService').value;
+            const statusDiv = document.getElementById('thumbnailStatus');
+            const titlesDiv = document.getElementById('thumbnailTitles');
+
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '썸네일 제목 생성 중...';
+            titlesDiv.innerHTML = '';
+
+            // 실제 API 호출
+            if (apiKey && service === 'gemini') {
+                try {
+                    const prompt = `아래 뉴스 제목과 대본을 바탕으로 유튜브 썸네일에 들어갈 강력한 후킹 문구를 10개 생성해주세요.
+
+뉴스 제목: ${selectedNews.title}
+대본 내용: ${generatedScript.substring(0, 300)}...
+
+[요구사항]
+1. 15자 이내로 간결하게
+2. 충격, 궁금증 유발
+3. 대본 내용과 연관성 있게
+4. 다양한 스타일 사용:
+   - 질문형: "이게 가능해?"
+   - 숫자형: "50조 투자"
+   - 충격형: "경악! ~~"
+   - 반전형: "알고보니..."
+
+각 제목만 번호와 함께 출력해주세요. 다른 설명은 하지 마세요.`;
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const text = data.candidates[0].content.parts[0].text;
+
+                        thumbnailTitles = text.split('\n')
+                            .filter(line => line.trim())
+                            .map(line => line.replace(/^\d+\.\s*/, '').trim());
+
+                        renderThumbnailTitles(thumbnailTitles);
+
+                        statusDiv.className = 'status success';
+                        statusDiv.textContent = `✅ ${thumbnailTitles.length}개 썸네일 제목 생성 완료!`;
+
+                        document.getElementById('generateTTSBtn').disabled = false;
+                    } else {
+                        throw new Error(`API 오류: ${response.status}`);
+                    }
+                } catch (error) {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = `❌ 제목 생성 실패: ${error.message}\n\nMock 모드로 전환합니다...`;
+
+                    setTimeout(() => generateThumbnailsMock(), 1000);
+                }
+            } else {
+                generateThumbnailsMock();
+            }
+        }
+
+        function generateThumbnailsMock() {
+            const statusDiv = document.getElementById('thumbnailStatus');
+
+            setTimeout(() => {
+                thumbnailTitles = [
+                    `${selectedNews.keyword} 실화?`,
+                    '충격! 50조 투자',
+                    '결국 터졌습니다',
+                    '알고 보니 대박',
+                    '지금 당장 확인',
+                    '99% 모르는 사실',
+                    '뒤늦은 후회',
+                    '전문가도 놀란',
+                    '이제야 밝혀진',
+                    '반드시 알아야 할'
+                ];
+
+                renderThumbnailTitles(thumbnailTitles);
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ 10개 썸네일 제목 생성 완료! (Mock 모드)`;
+
+                document.getElementById('generateTTSBtn').disabled = false;
+            }, 2000);
+        }
+
+        function renderThumbnailTitles(titles) {
+            const titlesDiv = document.getElementById('thumbnailTitles');
+            titlesDiv.innerHTML = '';
+
+            titles.slice(0, 10).forEach((title, index) => {
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'thumbnail-title';
+                titleDiv.textContent = title;
+                titleDiv.onclick = () => selectThumbnail(title, titleDiv);
+                titlesDiv.appendChild(titleDiv);
+            });
+        }
+
+        function selectThumbnail(title, element) {
+            selectedThumbnail = title;
+            document.querySelectorAll('.thumbnail-title').forEach(item => {
+                item.classList.remove('selected');
+            });
+            element.classList.add('selected');
+
+            const statusDiv = document.getElementById('thumbnailStatus');
+            statusDiv.className = 'status success';
+            statusDiv.textContent = `✅ 선택됨: ${title}`;
+        }
+
+        // 4. TTS 음성 생성
+        async function generateTTS() {
+            if (!generatedScript) {
+                alert('먼저 대본을 생성해주세요!');
+                return;
+            }
+
+            const statusDiv = document.getElementById('ttsStatus');
+            const previewDiv = document.getElementById('ttsPreview');
+            const fileListDiv = document.getElementById('ttsFileList');
+
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = 'AI 음성 생성 중... (약 1분 소요)';
+            previewDiv.style.display = 'none';
+
+            setTimeout(() => {
+                generatedAudio = {
+                    filename: `voice_${Date.now()}.mp3`,
+                    duration: Math.floor(generatedScript.length / 150),
+                    size: '15.2 MB',
+                    path: 'output/audio/voice_xxxxx.mp3'
+                };
+
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `✅ 음성 파일 생성 완료!
+파일명: ${generatedAudio.filename}
+길이: ${generatedAudio.duration}분 ${Math.floor(Math.random() * 60)}초
+크기: ${generatedAudio.size}`;
+
+                fileListDiv.innerHTML = `
+                    <li>
+                        <div class="file-info">
+                            <div class="file-name">🎵 ${generatedAudio.filename}</div>
+                            <div class="file-size">길이: ${generatedAudio.duration}분 | 크기: ${generatedAudio.size}</div>
+                        </div>
+                    </li>
+                `;
+                previewDiv.style.display = 'block';
+
+                document.getElementById('editVideoBtn').disabled = false;
+            }, 3000);
+        }
+
+        // 5. 영상 편집
+        async function editVideo() {
+            if (!generatedAudio) {
+                alert('먼저 음성을 생성해주세요!');
+                return;
+            }
+
+            const statusDiv = document.getElementById('editStatus');
+            const previewDiv = document.getElementById('videoPreview');
+            const fileListDiv = document.getElementById('videoFileList');
+
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '영상 편집 중... (자막 자동 생성, 이미지 삽입)';
+            previewDiv.style.display = 'none';
+
+            setTimeout(() => {
+                editedVideo = {
+                    filename: `video_${Date.now()}.mp4`,
+                    resolution: '1920x1080',
+                    duration: generatedAudio.duration,
+                    size: '245 MB',
+                    path: 'output/videos/video_xxxxx.mp4'
+                };
+
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `✅ 영상 편집 완료!
+파일명: ${editedVideo.filename}
+해상도: ${editedVideo.resolution}
+길이: ${editedVideo.duration}분
+크기: ${editedVideo.size}`;
+
+                fileListDiv.innerHTML = `
+                    <li>
+                        <div class="file-info">
+                            <div class="file-name">🎥 ${editedVideo.filename}</div>
+                            <div class="file-size">${editedVideo.resolution} | ${editedVideo.duration}분 | ${editedVideo.size}</div>
+                        </div>
+                    </li>
+                `;
+                previewDiv.style.display = 'block';
+
+                document.getElementById('reviewBtn').disabled = false;
+                document.getElementById('uploadBtn').disabled = false;
+            }, 5000);
+        }
+
+        // 최종 확인
+        function showFinalReview() {
+            const reviewContent = document.getElementById('reviewContent');
+
+            reviewContent.innerHTML = `
+                <div class="review-item">
+                    <h3>📰 선택된 뉴스</h3>
+                    <div class="content">${selectedNews.title}</div>
+                </div>
+                <div class="review-item">
+                    <h3>📝 대본</h3>
+                    <div class="content">${generatedScript.substring(0, 200)}... (전체 ${generatedScript.length}자)</div>
+                </div>
+                <div class="review-item">
+                    <h3>🎨 썸네일 제목</h3>
+                    <div class="content">${selectedThumbnail || '선택 안됨'}</div>
+                </div>
+                <div class="review-item">
+                    <h3>🎵 음성 파일</h3>
+                    <div class="content">${generatedAudio.filename} (${generatedAudio.duration}분)</div>
+                </div>
+                <div class="review-item">
+                    <h3>🎥 영상 파일</h3>
+                    <div class="content">${editedVideo.filename} (${editedVideo.resolution}, ${editedVideo.size})</div>
+                </div>
+                <div class="review-item">
+                    <h3>📤 업로드 설정</h3>
+                    <div class="content">
+                        채널: ${document.getElementById('youtubeChannel').options[document.getElementById('youtubeChannel').selectedIndex].text}<br>
+                        업로드 시간: ${document.getElementById('uploadTime').value || '즉시'}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('reviewModal').style.display = 'block';
+        }
+
+        function closeReviewModal() {
+            document.getElementById('reviewModal').style.display = 'none';
+        }
+
+        function confirmUpload() {
+            closeReviewModal();
+            alert('✅ 최종 확인 완료! 이제 업로드 버튼을 눌러주세요.');
+        }
+
+        // 6. 유튜브 업로드
+        async function uploadVideo() {
+            if (!editedVideo) {
+                alert('먼저 영상을 편집해주세요!');
+                return;
+            }
+
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '유튜브 업로드 중...';
+
+            setTimeout(() => {
+                const videoUrl = `https://www.youtube.com/watch?v=MOCK_${Date.now()}`;
+
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `✅ 유튜브 업로드 완료!
+영상 제목: ${selectedNews.title}
+썸네일: ${selectedThumbnail || '자동'}
+업로드 시간: ${document.getElementById('uploadTime').value || '즉시'}
+URL: <a href="${videoUrl}" target="_blank" style="color: #667eea; font-weight: bold;">${videoUrl}</a>`;
+
+                alert('🎉 전체 워크플로우 완료! 영상이 유튜브에 업로드되었습니다.');
+            }, 3000);
+        }
+
+        // 초기화
+        window.onload = function() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(18, 0, 0, 0);
+            document.getElementById('uploadTime').value = tomorrow.toISOString().slice(0, 16);
+
+            // 모달 외부 클릭 시 닫기
+            window.onclick = function(event) {
+                if (event.target.className === 'modal') {
+                    event.target.style.display = 'none';
+                }
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# 필수 패키지
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+feedparser>=6.0.10
+
+# AI 서비스 (선택 - 사용할 서비스만 설치)
+openai>=1.3.0
+google-generativeai>=0.3.0
+anthropic>=0.7.0
+
+# TTS 서비스 (선택)
+google-cloud-texttospeech>=2.14.0
+azure-cognitiveservices-speech>=1.31.0
+
+# YouTube API
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+google-api-python-client>=2.100.0
+
+# 오디오/비디오 처리 (선택)
+pydub>=0.25.1
+moviepy>=1.0.3
+ffmpeg-python>=0.2.0
+
+# 유틸리티
+python-dateutil>=2.8.2
+pytz>=2023.3

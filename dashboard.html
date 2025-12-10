@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뉴스 유튜브 자동화 대시보드</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .news-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .news-item {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .news-item:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .news-item.selected {
+            border-color: #667eea;
+            background: #e8ebff;
+        }
+
+        .news-item h3 {
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .news-item .meta {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .status {
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .thumbnail-titles {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .thumbnail-title {
+            padding: 10px;
+            background: #f8f9ff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .thumbnail-title:hover {
+            border-color: #667eea;
+            background: #e8ebff;
+        }
+
+        .thumbnail-title.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .workflow-steps {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: #f8f9ff;
+            border-left: 5px solid #e0e0e0;
+        }
+
+        .step.active {
+            border-left-color: #667eea;
+            background: #e8ebff;
+        }
+
+        .step.completed {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .step-content h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .step-content p {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 뉴스 유튜브 자동화 시스템</h1>
+            <p class="subtitle">뉴스 수집부터 영상 제작까지 원클릭 자동화</p>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- 1. 뉴스 수집 카드 -->
+            <div class="card">
+                <h2>📰 1. 뉴스 수집</h2>
+                <div class="input-group">
+                    <label>키워드 (쉼표로 구분)</label>
+                    <input type="text" id="keywords" value="삼성,쿠팡,부동산,손흥민,AI" placeholder="삼성, 현대, 경제...">
+                </div>
+                <div class="input-group">
+                    <label>수집 개수</label>
+                    <input type="number" id="newsCount" value="20" min="5" max="100">
+                </div>
+                <button class="btn" onclick="collectNews()">🔍 뉴스 수집 시작</button>
+                <div id="newsStatus" class="status" style="display:none;"></div>
+                <div id="newsList" class="news-list"></div>
+            </div>
+
+            <!-- 2. AI 대본 생성 카드 -->
+            <div class="card">
+                <h2>✍️ 2. AI 대본 생성</h2>
+                <div class="input-group">
+                    <label>AI 서비스</label>
+                    <select id="aiService">
+                        <option value="openai">OpenAI GPT-4</option>
+                        <option value="gemini">Google Gemini</option>
+                        <option value="anthropic">Anthropic Claude</option>
+                        <option value="mock" selected>Mock (테스트)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>API 키</label>
+                    <input type="password" id="apiKey" placeholder="API 키 입력 (Mock 모드는 불필요)">
+                </div>
+                <button class="btn" onclick="generateScript()" id="generateScriptBtn" disabled>📝 대본 생성</button>
+                <div id="scriptStatus" class="status" style="display:none;"></div>
+            </div>
+
+            <!-- 3. 썸네일 제목 생성 카드 -->
+            <div class="card">
+                <h2>🎨 3. 썸네일 제목</h2>
+                <button class="btn" onclick="generateThumbnails()" id="generateThumbnailBtn" disabled>🎯 썸네일 제목 10개 생성</button>
+                <div id="thumbnailStatus" class="status" style="display:none;"></div>
+                <div id="thumbnailTitles" class="thumbnail-titles"></div>
+            </div>
+
+            <!-- 4. TTS 음성 생성 카드 -->
+            <div class="card">
+                <h2>🎤 4. TTS 음성 생성</h2>
+                <div class="input-group">
+                    <label>TTS 서비스</label>
+                    <select id="ttsService">
+                        <option value="elevenlabs">ElevenLabs</option>
+                        <option value="google">Google TTS</option>
+                        <option value="azure">Azure TTS</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>음성 스타일</label>
+                    <select id="voiceStyle">
+                        <option value="professional">전문적인</option>
+                        <option value="friendly">친근한</option>
+                        <option value="energetic">활기찬</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="generateTTS()" id="generateTTSBtn" disabled>🔊 음성 생성</button>
+                <div id="ttsStatus" class="status" style="display:none;"></div>
+            </div>
+
+            <!-- 5. 영상 편집 카드 -->
+            <div class="card">
+                <h2>🎬 5. 영상 편집</h2>
+                <div class="input-group">
+                    <label>편집 소프트웨어</label>
+                    <select id="editSoftware">
+                        <option value="vrew">Vrew (자동 자막)</option>
+                        <option value="premiere">Adobe Premiere</option>
+                        <option value="davinci">DaVinci Resolve</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="editVideo()" id="editVideoBtn" disabled>✂️ 영상 편집 시작</button>
+                <div id="editStatus" class="status" style="display:none;"></div>
+            </div>
+
+            <!-- 6. 유튜브 업로드 카드 -->
+            <div class="card">
+                <h2>📤 6. 유튜브 업로드</h2>
+                <div class="input-group">
+                    <label>채널 선택</label>
+                    <select id="youtubeChannel">
+                        <option value="channel1">시니어 뉴스 채널</option>
+                        <option value="channel2">경제 뉴스 채널</option>
+                        <option value="channel3">테스트 채널</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>업로드 시간</label>
+                    <input type="datetime-local" id="uploadTime">
+                </div>
+                <button class="btn" onclick="uploadVideo()" id="uploadBtn" disabled>🚀 유튜브 업로드</button>
+                <div id="uploadStatus" class="status" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- 워크플로우 진행상황 -->
+        <div class="workflow-steps">
+            <h2 style="color: #667eea; margin-bottom: 20px;">🔄 워크플로우 진행상황</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+            <div style="margin-top: 20px;">
+                <div class="step" id="step1">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>뉴스 수집</h3>
+                        <p>트렌드 기사 자동 수집</p>
+                    </div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>AI 대본 생성</h3>
+                        <p>유튜브 대본 자동 작성</p>
+                    </div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>썸네일 제목</h3>
+                        <p>CTR 높은 제목 생성</p>
+                    </div>
+                </div>
+                <div class="step" id="step4">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>TTS 음성</h3>
+                        <p>AI 보이스 생성</p>
+                    </div>
+                </div>
+                <div class="step" id="step5">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h3>영상 편집</h3>
+                        <p>자동 편집 및 자막</p>
+                    </div>
+                </div>
+                <div class="step" id="step6">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <h3>유튜브 업로드</h3>
+                        <p>자동 예약 업로드</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let collectedNews = [];
+        let selectedNews = null;
+        let generatedScript = null;
+        let selectedThumbnail = null;
+        let currentStep = 0;
+
+        // 1. 뉴스 수집
+        async function collectNews() {
+            const keywords = document.getElementById('keywords').value;
+            const count = document.getElementById('newsCount').value;
+            const statusDiv = document.getElementById('newsStatus');
+            const newsListDiv = document.getElementById('newsList');
+
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '뉴스 수집 중...';
+
+            // 실제로는 Python 백엔드 API 호출
+            // 여기서는 Mock 데이터 사용
+            setTimeout(() => {
+                collectedNews = [
+                    {
+                        id: 1,
+                        title: '삼성전자, 반도체 분야 50조 투자 발표',
+                        description: '삼성전자가 차세대 반도체 생산을 위해...',
+                        keyword: '삼성',
+                        relevance_score: 2.5,
+                        pub_date: new Date().toISOString()
+                    },
+                    {
+                        id: 2,
+                        title: '쿠팡 새벽배송, 전국 95% 지역으로 확대',
+                        description: '쿠팡이 로켓배송 서비스를...',
+                        keyword: '쿠팡',
+                        relevance_score: 2.0,
+                        pub_date: new Date().toISOString()
+                    },
+                    {
+                        id: 3,
+                        title: '서울 아파트 평균 매매가 12억 돌파',
+                        description: '수도권 부동산 가격이 계속 상승...',
+                        keyword: '부동산',
+                        relevance_score: 1.8,
+                        pub_date: new Date().toISOString()
+                    }
+                ];
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ ${collectedNews.length}개 뉴스 수집 완료!`;
+
+                renderNewsList();
+                updateProgress(1);
+            }, 2000);
+        }
+
+        function renderNewsList() {
+            const newsListDiv = document.getElementById('newsList');
+            newsListDiv.innerHTML = '<h3 style="margin: 15px 0;">수집된 뉴스 (클릭하여 선택)</h3>';
+
+            collectedNews.forEach(news => {
+                const newsItem = document.createElement('div');
+                newsItem.className = 'news-item';
+                newsItem.onclick = () => selectNews(news);
+                newsItem.innerHTML = `
+                    <h3>${news.title}</h3>
+                    <div class="meta">
+                        키워드: ${news.keyword} | 관련성: ${news.relevance_score.toFixed(1)}
+                    </div>
+                `;
+                newsListDiv.appendChild(newsItem);
+            });
+        }
+
+        function selectNews(news) {
+            selectedNews = news;
+            document.querySelectorAll('.news-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            document.getElementById('generateScriptBtn').disabled = false;
+        }
+
+        // 2. AI 대본 생성
+        async function generateScript() {
+            if (!selectedNews) {
+                alert('먼저 뉴스를 선택해주세요!');
+                return;
+            }
+
+            const statusDiv = document.getElementById('scriptStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = 'AI 대본 생성 중... (약 30초 소요)';
+
+            // 실제로는 Python 백엔드 API 호출
+            setTimeout(() => {
+                generatedScript = `
+여러분, 안녕하세요. 오늘은 정말 중요한 소식을 가지고 왔습니다.
+
+[도입부]
+${selectedNews.title}에 대해 아시나요? 최근 많은 분들이 관심을 가지고 계신 이 내용, 오늘 자세히 알아보도록 하겠습니다.
+
+[본문]
+먼저 사건의 전말을 말씀드리자면...
+(중략 - 실제로는 8-10분 분량의 상세한 대본)
+
+[마무리]
+오늘 영상이 도움이 되셨다면 구독과 좋아요, 알림 설정 부탁드립니다.
+                `;
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ 대본 생성 완료! (약 ${Math.floor(generatedScript.length / 150)} 분 분량)`;
+
+                document.getElementById('generateThumbnailBtn').disabled = false;
+                updateProgress(2);
+            }, 3000);
+        }
+
+        // 3. 썸네일 제목 생성
+        async function generateThumbnails() {
+            const statusDiv = document.getElementById('thumbnailStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '썸네일 제목 생성 중...';
+
+            setTimeout(() => {
+                const titles = [
+                    '이거 실화인가요?',
+                    '충격! 50조 투자 결정',
+                    '결국 터졌습니다',
+                    '알고 보니 대박',
+                    '지금 당장 확인',
+                    '99% 모르는 사실',
+                    '뒤늦은 후회',
+                    '전문가도 놀란',
+                    '이제야 밝혀진 진실',
+                    '반드시 알아야 할'
+                ];
+
+                const titlesDiv = document.getElementById('thumbnailTitles');
+                titlesDiv.innerHTML = '';
+
+                titles.forEach((title, index) => {
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'thumbnail-title';
+                    titleDiv.textContent = title;
+                    titleDiv.onclick = () => selectThumbnail(title, titleDiv);
+                    titlesDiv.appendChild(titleDiv);
+                });
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ 10개 썸네일 제목 생성 완료!';
+
+                document.getElementById('generateTTSBtn').disabled = false;
+                updateProgress(3);
+            }, 2000);
+        }
+
+        function selectThumbnail(title, element) {
+            selectedThumbnail = title;
+            document.querySelectorAll('.thumbnail-title').forEach(item => {
+                item.classList.remove('selected');
+            });
+            element.classList.add('selected');
+        }
+
+        // 4. TTS 음성 생성
+        async function generateTTS() {
+            const statusDiv = document.getElementById('ttsStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = 'AI 음성 생성 중... (약 1분 소요)';
+
+            setTimeout(() => {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '✅ 음성 파일 생성 완료!<br>파일: voice_output.mp3 (8분 32초)';
+
+                document.getElementById('editVideoBtn').disabled = false;
+                updateProgress(4);
+            }, 3000);
+        }
+
+        // 5. 영상 편집
+        async function editVideo() {
+            const statusDiv = document.getElementById('editStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '영상 편집 중... (자막 자동 생성, 이미지 삽입)';
+
+            setTimeout(() => {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '✅ 영상 편집 완료!<br>파일: final_video.mp4 (1920x1080, 8분 45초)';
+
+                document.getElementById('uploadBtn').disabled = false;
+                updateProgress(5);
+            }, 5000);
+        }
+
+        // 6. 유튜브 업로드
+        async function uploadVideo() {
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '유튜브 업로드 중...';
+
+            setTimeout(() => {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `
+                    ✅ 유튜브 업로드 완료!<br>
+                    영상 제목: ${selectedNews.title}<br>
+                    업로드 시간: ${document.getElementById('uploadTime').value || '즉시'}<br>
+                    <a href="#" style="color: #667eea; font-weight: bold;">유튜브에서 보기 →</a>
+                `;
+
+                updateProgress(6);
+                alert('🎉 전체 워크플로우 완료! 영상이 유튜브에 업로드되었습니다.');
+            }, 3000);
+        }
+
+        // 진행상황 업데이트
+        function updateProgress(step) {
+            currentStep = step;
+            const progress = (step / 6) * 100;
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = progress + '%';
+            progressFill.textContent = Math.round(progress) + '%';
+
+            // 단계별 스타일 업데이트
+            for (let i = 1; i <= 6; i++) {
+                const stepDiv = document.getElementById(`step${i}`);
+                if (i < step) {
+                    stepDiv.className = 'step completed';
+                } else if (i === step) {
+                    stepDiv.className = 'step active';
+                } else {
+                    stepDiv.className = 'step';
+                }
+            }
+        }
+
+        // 초기화
+        window.onload = function() {
+            // 현재 시간 + 1일 후로 업로드 시간 기본값 설정
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(18, 0, 0, 0);
+            document.getElementById('uploadTime').value = tomorrow.toISOString().slice(0, 16);
+        };
+    </script>
+</body>
+</html>
