@@ -13,7 +13,7 @@ def test_gemini_api(api_key: str):
     print("🧪 Gemini API 테스트 시작")
     print("="*60)
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
 
     test_article = {
         'title': '삼성전자, 반도체 분야 50조 투자 발표',
@@ -160,7 +160,7 @@ def test_thumbnail_generation(api_key: str, article_title: str):
     print("🧪 썸네일 제목 생성 테스트")
     print("="*60)
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
 
     prompt = f"""
 아래 뉴스 제목을 바탕으로 유튜브 썸네일에 들어갈 강력한 후킹 문구를 10개 생성해주세요.
