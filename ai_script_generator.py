@@ -155,7 +155,7 @@ TAGS: [관련 태그 10개, 쉼표로 구분]
 
     def _call_gemini(self, prompt: str) -> str:
         """Google Gemini API 호출"""
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={self.api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={self.api_key}"
         headers = {"Content-Type": "application/json"}
         data = {
             "contents": [{
