@@ -597,38 +597,53 @@
                         // Google News RSS URL
                         const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(keyword)}&hl=ko&gl=KR&ceid=KR:ko`;
 
-                        // CORS proxy를 통해 RSS 가져오기
-                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`;
+                        // RSS2JSON API 사용 (더 안정적)
+                        const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=20`;
 
-                        const response = await fetch(proxyUrl);
-                        const xmlText = await response.text();
+                        console.log(`뉴스 수집 시도: ${keyword}`, apiUrl);
 
-                        // XML 파싱
-                        const parser = new DOMParser();
-                        const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                        const response = await fetch(apiUrl);
 
-                        // 뉴스 아이템 추출
-                        const items = xmlDoc.querySelectorAll('item');
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+
+                        const data = await response.json();
+
+                        console.log(`${keyword} 응답:`, data);
+
+                        if (data.status !== 'ok') {
+                            throw new Error(data.message || 'RSS 파싱 실패');
+                        }
+
+                        const items = data.items || [];
+
+                        if (items.length === 0) {
+                            console.warn(`${keyword}: 뉴스 없음`);
+                            continue;
+                        }
 
                         let newsPerKeyword = 0;
-                        items.forEach((item, index) => {
-                            if (newsPerKeyword >= Math.ceil(count / keywordList.length)) return;
+                        const maxPerKeyword = Math.ceil(count / keywordList.length);
 
-                            const title = item.querySelector('title')?.textContent || '';
-                            const link = item.querySelector('link')?.textContent || '';
-                            const pubDate = item.querySelector('pubDate')?.textContent || '';
-                            const description = item.querySelector('description')?.textContent || '';
+                        items.forEach((item, index) => {
+                            if (newsPerKeyword >= maxPerKeyword) return;
+
+                            const title = item.title || '';
+                            const link = item.link || '';
+                            const pubDate = item.pubDate || '';
+                            const description = item.description || '';
 
                             // HTML 태그 제거
                             const cleanDescription = description.replace(/<[^>]*>/g, '').trim();
 
                             collectedNews.push({
-                                id: Date.now() + collectedNews.length,
+                                id: Date.now() + collectedNews.length + Math.random(),
                                 title: title,
-                                description: cleanDescription || `${keyword} 관련 뉴스입니다.`,
+                                description: cleanDescription.substring(0, 200) || `${keyword} 관련 뉴스입니다.`,
                                 keyword: keyword,
                                 link: link,
-                                relevance_score: 2.5 - (index * 0.1), // 순서에 따라 점수 감소
+                                relevance_score: 2.5 - (index * 0.1),
                                 pub_date: pubDate,
                                 collected_at: new Date().toLocaleString()
                             });
@@ -636,9 +651,12 @@
                             newsPerKeyword++;
                         });
 
+                        console.log(`${keyword}: ${newsPerKeyword}개 뉴스 수집 완료`);
+
                     } catch (error) {
-                        console.error(`${keyword} 키워드 수집 실패:`, error);
-                        statusDiv.textContent = `⚠️ ${keyword} 수집 중 오류 발생, 계속 진행...`;
+                        console.error(`${keyword} 수집 실패:`, error);
+                        statusDiv.textContent = `⚠️ ${keyword} 수집 중 오류 발생 (${error.message}), 계속 진행...`;
+                        await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
 
@@ -651,13 +669,19 @@
 
                     renderNewsList();
                 } else {
-                    throw new Error('뉴스를 찾을 수 없습니다.');
+                    throw new Error('뉴스를 찾을 수 없습니다. 다른 키워드를 시도해보세요.');
                 }
 
             } catch (error) {
                 console.error('뉴스 수집 실패:', error);
                 statusDiv.className = 'status error';
-                statusDiv.textContent = `❌ 뉴스 수집 실패: ${error.message}\n\n문제 해결:\n1. 인터넷 연결 확인\n2. 키워드를 한글로 입력했는지 확인\n3. 다른 키워드로 시도해보세요`;
+                statusDiv.textContent = `❌ 뉴스 수집 실패: ${error.message}
+
+문제 해결:
+1. 브라우저 콘솔(F12)을 열어 상세 오류 확인
+2. 키워드를 한글로 입력 (예: 쿠팡, 삼성, 부동산)
+3. 인터넷 연결 확인
+4. 페이지 새로고침 후 다시 시도`;
             }
         }
 
