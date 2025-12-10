@@ -577,49 +577,88 @@
         // 1. 뉴스 수집
         async function collectNews() {
             const keywords = document.getElementById('keywords').value;
-            const count = document.getElementById('newsCount').value;
+            const count = parseInt(document.getElementById('newsCount').value);
             const statusDiv = document.getElementById('newsStatus');
             const newsListDiv = document.getElementById('newsList');
 
             statusDiv.style.display = 'block';
             statusDiv.className = 'status loading';
-            statusDiv.textContent = '뉴스 수집 중...';
+            statusDiv.textContent = '실제 Google News에서 뉴스 수집 중...';
 
-            // 실제 뉴스 수집 시뮬레이션
-            setTimeout(() => {
+            try {
                 const keywordList = keywords.split(',').map(k => k.trim());
                 collectedNews = [];
 
-                // 다양한 뉴스 생성
-                const newsTemplates = [
-                    { title: '삼성전자, 반도체 분야 50조 투자 발표', keyword: '삼성', score: 2.5 },
-                    { title: '쿠팡 새벽배송, 전국 95% 지역으로 확대', keyword: '쿠팡', score: 2.3 },
-                    { title: '서울 아파트 평균 매매가 12억 돌파', keyword: '부동산', score: 2.1 },
-                    { title: '손흥민, EPL 통산 100호골 달성', keyword: '손흥민', score: 1.9 },
-                    { title: 'AI 반도체 시장, 올해 2배 성장 전망', keyword: 'AI', score: 1.8 },
-                    { title: '현대차, 전기차 신모델 3종 출시', keyword: '현대', score: 1.7 },
-                    { title: 'LG에너지솔루션, 북미 공장 증설', keyword: 'LG', score: 1.6 },
-                    { title: '네이버, AI 검색 서비스 대폭 개선', keyword: '네이버', score: 1.5 }
-                ];
+                // 각 키워드별로 뉴스 수집
+                for (const keyword of keywordList) {
+                    try {
+                        statusDiv.textContent = `뉴스 수집 중... (키워드: ${keyword})`;
 
-                keywordList.forEach((keyword, idx) => {
-                    const template = newsTemplates[idx % newsTemplates.length];
-                    collectedNews.push({
-                        id: Date.now() + idx,
-                        title: template.title.replace(/삼성|쿠팡|부동산|손흥민|AI/, keyword),
-                        description: `${keyword}에 대한 최신 뉴스입니다. 자세한 내용은 기사에서 확인하세요.`,
-                        keyword: keyword,
-                        relevance_score: template.score,
-                        pub_date: new Date().toISOString(),
-                        collected_at: new Date().toLocaleString()
-                    });
-                });
+                        // Google News RSS URL
+                        const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(keyword)}&hl=ko&gl=KR&ceid=KR:ko`;
 
-                statusDiv.className = 'status success';
-                statusDiv.textContent = `✅ ${collectedNews.length}개 뉴스 수집 완료!\n수집 시간: ${new Date().toLocaleString()}`;
+                        // CORS proxy를 통해 RSS 가져오기
+                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`;
 
-                renderNewsList();
-            }, 2000);
+                        const response = await fetch(proxyUrl);
+                        const xmlText = await response.text();
+
+                        // XML 파싱
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+
+                        // 뉴스 아이템 추출
+                        const items = xmlDoc.querySelectorAll('item');
+
+                        let newsPerKeyword = 0;
+                        items.forEach((item, index) => {
+                            if (newsPerKeyword >= Math.ceil(count / keywordList.length)) return;
+
+                            const title = item.querySelector('title')?.textContent || '';
+                            const link = item.querySelector('link')?.textContent || '';
+                            const pubDate = item.querySelector('pubDate')?.textContent || '';
+                            const description = item.querySelector('description')?.textContent || '';
+
+                            // HTML 태그 제거
+                            const cleanDescription = description.replace(/<[^>]*>/g, '').trim();
+
+                            collectedNews.push({
+                                id: Date.now() + collectedNews.length,
+                                title: title,
+                                description: cleanDescription || `${keyword} 관련 뉴스입니다.`,
+                                keyword: keyword,
+                                link: link,
+                                relevance_score: 2.5 - (index * 0.1), // 순서에 따라 점수 감소
+                                pub_date: pubDate,
+                                collected_at: new Date().toLocaleString()
+                            });
+
+                            newsPerKeyword++;
+                        });
+
+                    } catch (error) {
+                        console.error(`${keyword} 키워드 수집 실패:`, error);
+                        statusDiv.textContent = `⚠️ ${keyword} 수집 중 오류 발생, 계속 진행...`;
+                    }
+                }
+
+                if (collectedNews.length > 0) {
+                    // 관련성 점수로 정렬
+                    collectedNews.sort((a, b) => b.relevance_score - a.relevance_score);
+
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = `✅ ${collectedNews.length}개 실제 뉴스 수집 완료!\n수집 시간: ${new Date().toLocaleString()}\n출처: Google News RSS`;
+
+                    renderNewsList();
+                } else {
+                    throw new Error('뉴스를 찾을 수 없습니다.');
+                }
+
+            } catch (error) {
+                console.error('뉴스 수집 실패:', error);
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ 뉴스 수집 실패: ${error.message}\n\n문제 해결:\n1. 인터넷 연결 확인\n2. 키워드를 한글로 입력했는지 확인\n3. 다른 키워드로 시도해보세요`;
+            }
         }
 
         // 뉴스 새로고침
